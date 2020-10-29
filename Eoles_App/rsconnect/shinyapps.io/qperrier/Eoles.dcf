@@ -1,0 +1,13 @@
+name: Eoles
+title: Eoles
+username:
+account: qperrier
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3054835
+bundleId: 3773661
+url: https://qperrier.shinyapps.io/Eoles/
+when: 1603442177.69702
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: data/.DS_Store|www/.DS_Store

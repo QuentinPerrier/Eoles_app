@@ -10,8 +10,8 @@ production_technologies <- c("offshore", "onshore", "pv", "biogas")
 storage_technologies <- c("battery", "methanation", "phs")
 
 color_scheme <- tibble(
-  technology = c("onshore", "offshore", "pv", "methanation", "biogas", "phs", "battery"),
-  color = c("light green", "dark green", "#FFF633", "grey", "brown", "#487FDF", "purple")
+  technology = c("onshore", "offshore", "pv", "methanation", "biogas", "battery", "hydro", "phs"),
+  color = c("light green", "dark green", "#FFF633", "grey", "brown", "purple", "blue", "blue")
 ) %>%
   arrange(technology)
 
@@ -65,7 +65,7 @@ ui <- fluidPage(
     column(6,
            selectInput("battery_capex_selection", p("Batteries (euro/kWh**)"), 
                        choices = battery_capex_values, selected = battery_capex_values[2]),
-           helpText("**Pour les batteries, la part est proportionnelle à l'énergie (euro/kWh) et une part du CAPEX est proportionnelle à la puissance (140 euros/kW)"),
+           helpText("**Pour les batteries, une part du CAPEX est proportionnelle à l'énergie (euro/kWh) et une part est proportionnelle à la puissance (140 euros/kW)"),
            
            selectInput("methanation_capex_selection", p("Méthanation (euro/kW électrique)"), 
                        choices = methanation_capex_values, selected = methanation_capex_values[2])
@@ -177,7 +177,8 @@ server <- function(input, output) {
       mutate(technology = str_remove_all(technology, pattern = "_gene"),
              technology = tolower(technology)) %>% 
       filter(technology %in% production_technologies) %>% 
-      add_row(technology = "biogas", generation = 15)
+      add_row(technology = "biogas", generation = 15) %>% 
+      add_row(technology = "hydro", generation = 45.01)
 
     color_gene <- color_scheme %>%
       filter(technology %in% generation$technology)
@@ -191,7 +192,8 @@ server <- function(input, output) {
       scale_x_discrete(labels=c("offshore" = "Eolien\nen mer", 
                                 "onshore" = "Eolien\nterrestre",
                                 "pv" = "PV",
-                                "biogas" = "Biogaz"))
+                                "biogas" = "Biogaz",
+                                "hydro" = "Hydrau."))
   })
 
   output$plotCapa <- renderPlot({
@@ -201,7 +203,8 @@ server <- function(input, output) {
       gather(technology, capacity) %>%
       mutate(technology = str_remove_all(technology, pattern = "_cap"),
              technology = tolower(technology)) %>% 
-      filter(technology %in% production_technologies)
+      filter(technology %in% production_technologies) %>% 
+      add_row(technology = "hydro", capacity = 20.5)
 
     color_cap <- color_scheme %>%
       filter(technology %in% capa$technology)
@@ -215,7 +218,8 @@ server <- function(input, output) {
       scale_x_discrete(labels=c("offshore" = "Eolien\nen mer", 
                                 "onshore" = "Eolien\nterrestre",
                                 "pv" = "PV",
-                                "biogas" = "Biogaz"))
+                                "biogas" = "Biogaz",
+                                "hydro" = "Hydrau."))
   })
   
 
@@ -259,7 +263,7 @@ server <- function(input, output) {
       scale_fill_manual(values = color_gene$color) +
       theme_bw() +
       theme(text = element_text(size = 15)) +
-      labs(x = "", y = "", title = "Production annuelle \n(TWh/an)", fill = "Technology") +
+      labs(x = "", y = "", title = "Production annuelle \n(TWh-el/an)", fill = "Technology") +
       scale_x_discrete(labels=c("battery" = "Batteries", 
                                 "methanation" = "Méthanation",
                                 "phs" = "STEP"))
@@ -282,7 +286,7 @@ server <- function(input, output) {
     ggplot(data, aes(x = technology, y = value, fill = technology)) +
       geom_bar(stat = "identity", show.legend = FALSE) +
       scale_fill_manual(values = color_cap$color) +
-      labs(x = "", y = "", title = "Capacité en énergie \n(GWh ou TWh)", fill = "Technology") +
+      labs(x = "", y = "", title = "Capacité en énergie \n(GWh-el ou TWh-el)", fill = "Technology") +
       theme_bw() +
       theme(text = element_text(size = 15)) +
       scale_x_discrete(labels=c("battery" = "Batteries \n(GWh)", 
@@ -294,7 +298,7 @@ server <- function(input, output) {
 # System values -----------------------------------------------------------
 
   output$total_cost <- renderText({
-    paste(" > Le coût total de ce scénario est de ", results %>% filter(scen == selected_scenario()) %>% .$cost, "milliards d'euros par an, en incluant les coûts d'investissement, de raccordement au réseau électrique et de production (mais pas les coûts de transport et distribution d'électricité).")
+    paste(" > Le coût total de ce scénario est de ", results %>% filter(scen == selected_scenario()) %>% .$cost, "milliards d'euros par an, en incluant les coûts d'investissement, de raccordement au réseau électrique, de fonctionnement et de maintenance (mais pas les coûts de transport et distribution d'électricité).")
   })
   
   output$curtailment <- renderText({
